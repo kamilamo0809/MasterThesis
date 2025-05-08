@@ -286,8 +286,8 @@ lines:
     500.: "Al/St 240/40 4-bundle 380.0"
     750.: "Al/St 560/50 4-bundle 750.0"
   s_max_pu: 0.7
-  s_nom_max: .inf
-  max_extension: 20000 #MW
+  s_nom_max: 2000
+  max_extension: 2000 #MW
   length_factor: 1.25
   reconnect_crimea: true
   under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity for lines in grid extract
@@ -301,8 +301,8 @@ lines:
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#links
 links:
   p_max_pu: 1.0
-  p_nom_max: .inf
-  max_extension: 30000 #MW
+  p_nom_max: 3000
+  max_extension: 500 #MW
   length_factor: 1.25
   under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity for lines in grid extract
 
@@ -310,9 +310,9 @@ links:
 transmission_projects:
   enable: true
   include:
-    tyndp2020: true
-    nep: true
-    manual: true
+    tyndp2020: false
+    nep: false
+    manual: false
   skip:
   - upgraded_lines
   - upgraded_links
@@ -899,7 +899,10 @@ adjustments:
       Link:
         electricity distribution grid:
           capital_cost: 1.0
-    absolute: false
+    absolute:
+      Link:
+        H2 pipeline:
+          p_nom_max: 0  # fryser utvidelse
 
 # docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#solving
 solving:

@@ -267,10 +267,10 @@ def enforce_autarky(n, only_crossborder=False):
 
 def set_line_nom_max(
     n,
-    s_nom_max_set=np.inf,
-    p_nom_max_set=np.inf,
-    s_nom_max_ext=np.inf,
-    p_nom_max_ext=np.inf,
+    s_nom_max_set=2000,
+    p_nom_max_set=3000,
+    s_nom_max_ext=2000,
+    p_nom_max_ext=3000,
 ):
     if np.isfinite(s_nom_max_ext) and s_nom_max_ext > 0:
         logger.info(f"Limiting line extensions to {s_nom_max_ext} MW")
@@ -301,6 +301,7 @@ if __name__ == "__main__":
     update_config_from_wildcards(snakemake.config, snakemake.wildcards)
 
     n = pypsa.Network(snakemake.input[0])
+    n.links.loc[n.links.carrier == "DC", "p_nom_extendable"] = False
     Nyears = n.snapshot_weightings.objective.sum() / 8760.0
     costs = load_costs(
         snakemake.input.tech_costs,
@@ -348,10 +349,10 @@ if __name__ == "__main__":
 
     set_line_nom_max(
         n,
-        s_nom_max_set=snakemake.params.lines.get("s_nom_max", np.inf),
-        p_nom_max_set=snakemake.params.links.get("p_nom_max", np.inf),
-        s_nom_max_ext=snakemake.params.lines.get("max_extension", np.inf),
-        p_nom_max_ext=snakemake.params.links.get("max_extension", np.inf),
+        s_nom_max_set=snakemake.params.lines.get("s_nom_max", 3000),
+        p_nom_max_set=snakemake.params.links.get("p_nom_max", 3000),
+        s_nom_max_ext=snakemake.params.lines.get("max_extension", 2000),
+        p_nom_max_ext=snakemake.params.links.get("max_extension", 2000),
     )
 
     if snakemake.params.autarky["enable"]:
@@ -359,4 +360,5 @@ if __name__ == "__main__":
         enforce_autarky(n, only_crossborder=only_crossborder)
 
     n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
+    print(n.links[["p_nom", "p_nom_max"]])
     n.export_to_netcdf(snakemake.output[0])
