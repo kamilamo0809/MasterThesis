@@ -87,6 +87,7 @@ if __name__ == "__main__":
 
     cutout_params = snakemake.params.cutouts[snakemake.wildcards.cutout]
 
+
     snapshots = pd.date_range(freq="h", **snakemake.params.snapshots)
     time = [snapshots[0], snapshots[-1]]
     cutout_params["time"] = slice(*cutout_params.get("time", time))

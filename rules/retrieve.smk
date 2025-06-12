@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from shutil import move, unpack_archive
 from zipfile import ZipFile
 
+
 if config["enable"].get("retrieve", "auto") == "auto":
     config["enable"]["retrieve"] = has_internet_access()
 

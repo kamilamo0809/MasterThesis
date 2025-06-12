@@ -969,6 +969,8 @@ def rename_techs(label: str) -> str:
             label = label[len(ptr) :]
 
     for rif in rename_if_contains:
+        if label == "nuclear CHP" or label == "nuclear CHP heat" or label == "nuclear CHP elec.":
+            label = "nuclear with DH"
         if rif in label:
             label = rif
 
@@ -979,4 +981,5 @@ def rename_techs(label: str) -> str:
     for old, new in rename.items():
         if old == label:
             label = new
+
     return label

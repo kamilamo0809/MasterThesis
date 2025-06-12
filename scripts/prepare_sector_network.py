@@ -2565,6 +2565,59 @@ def add_heat(
                     * options["retrofitting"]["cost_factor"],
                 )
 
+    if options["nuclear_chp"]["enable"]:
+        logger.info("Adding flexible nuclear CHP with DH utilization")
+
+        nodes_with_dh = dist_fraction[dist_fraction > 0].index
+
+
+        urban_central = n.buses.index[n.buses.carrier == "urban central heat"]
+        urban_nodes = urban_central.str[: -len(" urban central heat")]
+        
+        if "uranium" not in n.buses.index:
+            n.add("Bus", "uranium", location = "EU", carrier="uranium", unit="MWh_th")
+
+            n.add("Generator",
+                name="uranium supply",
+                bus="uranium",
+                carrier="uranium",
+                p_nom_extendable=True,
+                capital_cost=0,
+                marginal_cost= 0)
+
+
+        for node in urban_nodes:
+            elec_bus = f"{node}"
+            heat_bus = f"{node} urban central heat"
+
+            if elec_bus not in n.buses.index or heat_bus not in n.buses.index:
+                continue
+            
+            n.add("Link",
+                name = f"{node} nuclear CHP heat",
+                carrier = "nuclear CHP heat",
+                bus0="uranium",
+                bus1=heat_bus,
+                p_max_pu = 0.9,  # capacity factor
+                efficiency=0.39,
+                capital_cost=0,
+                p_nom_extendable=True,
+            )
+
+            n.add("Link",
+                name = f"{node} nuclear CHP elec.",
+                carrier = "nuclear CHP elec.",
+                bus0="uranium",
+                bus1=elec_bus,
+                p_max_pu = 0.9,  # capacity factor
+                efficiency=costs.at["nuclear", "efficiency"],
+                capital_cost=(costs.at["nuclear", "fixed"] * costs.at["nuclear", "efficiency"]), 
+                p_nom_extendable=True,
+                marginal_cost=(costs.at["nuclear", "VOM"] + costs.at["nuclear", "fuel"]) * costs.at["nuclear", "efficiency"],
+            )
+
+
+
 
 def add_methanol(n, costs):
     methanol_options = options["methanol"]

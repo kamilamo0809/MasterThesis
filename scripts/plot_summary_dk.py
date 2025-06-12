@@ -60,12 +60,17 @@ preferred_order = pd.Index(
 )
 
 
-def plot_costs():
+def plot_costs_dk():
     cost_df = pd.read_csv(
         snakemake.input.costs, index_col=list(range(3)), header=list(range(n_header))
     )
 
-    df = cost_df.groupby(cost_df.index.get_level_values(2)).sum()
+    #df = cost_df.groupby(cost_df.index.get_level_values(2)).sum()
+
+    # Filter for Denmark (country code 'DK') before grouping
+    dk_df = cost_df[cost_df.index.get_level_values(0).str.startswith("DK")]
+    df = dk_df.groupby(dk_df.index.get_level_values(2)).sum()
+
 
     # convert to billions
     df = df / 1e9
@@ -512,8 +517,6 @@ if __name__ == "__main__":
     n_header = 4
 
     plot_costs()
-
-    plot_costs_dk()
 
     plot_energy()
 

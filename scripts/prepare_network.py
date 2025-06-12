@@ -268,9 +268,9 @@ def enforce_autarky(n, only_crossborder=False):
 def set_line_nom_max(
     n,
     s_nom_max_set=2000,
-    p_nom_max_set=3000,
+    p_nom_max_set=2000,
     s_nom_max_ext=2000,
-    p_nom_max_ext=3000,
+    p_nom_max_ext=0,
 ):
     if np.isfinite(s_nom_max_ext) and s_nom_max_ext > 0:
         logger.info(f"Limiting line extensions to {s_nom_max_ext} MW")
@@ -279,6 +279,8 @@ def set_line_nom_max(
     if np.isfinite(p_nom_max_ext) and p_nom_max_ext > 0:
         logger.info(f"Limiting link extensions to {p_nom_max_ext} MW")
         hvdc = n.links.index[n.links.carrier == "DC"]
+        if p_nom_max_ext > 500:
+            p_nom_max_ext = 500
         n.links.loc[hvdc, "p_nom_max"] = n.links.loc[hvdc, "p_nom"] + p_nom_max_ext
 
     n.lines["s_nom_max"] = n.lines.s_nom_max.clip(upper=s_nom_max_set)
@@ -349,10 +351,10 @@ if __name__ == "__main__":
 
     set_line_nom_max(
         n,
-        s_nom_max_set=snakemake.params.lines.get("s_nom_max", 3000),
-        p_nom_max_set=snakemake.params.links.get("p_nom_max", 3000),
+        s_nom_max_set=snakemake.params.lines.get("s_nom_max", 2000),
+        p_nom_max_set=snakemake.params.links.get("p_nom_max", 2000),
         s_nom_max_ext=snakemake.params.lines.get("max_extension", 2000),
-        p_nom_max_ext=snakemake.params.links.get("max_extension", 2000),
+        p_nom_max_ext=snakemake.params.links.get("max_extension", 0),
     )
 
     if snakemake.params.autarky["enable"]:

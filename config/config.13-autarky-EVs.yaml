@@ -1,5 +1,5 @@
 run: 
-  name: 'denmark'  # use this to keep track of runs with different settings
+  name: '13-EU-autarky-no_tranport'  # use this to keep track of runs with different settings
   scenarios:
     enable: false
 foresight: 'overnight' # options are overnight, myopic, perfect (perfect is not yet implemented)
@@ -8,9 +8,9 @@ foresight: 'overnight' # options are overnight, myopic, perfect (perfect is not 
 scenario:
   #sectors: [E]  # ignore this legacy setting
   #lv: [1.0]    # allowed transmission line volume expansion, can be any float >= 1.0 (today) or "opt"
-  clusters: [4] # number of nodes in Europe, any integer between 39 (1 node per country-zone) and several hundred
-  opts: ["lv2.0"]  # only relevant for PyPSA-Eur TODO:fjernet I fra sectors
-  sector_opts: [3H-T-H-B-solar+p3-dist1-cb25.7ex0]  # this is where the main scenario settings are
+  clusters: [39] # number of nodes in Europe, any integer between 39 (1 node per country-zone) and several hundred
+  opts: ["CCL"]  # only relevant for PyPSA-Eur
+  sector_opts: [3H-T-H-B-I-dist1-cb73.9ex0]  # this is where the main scenario settings are
   # to really understand the options here, look in scripts/prepare_sector_network.py
   # Co2Lx specifies the CO2 target in x% of the 1990 values; default will give default (5%);
   # Co2L0p25 will give 25% CO2 emissions; Co2Lm0p05 will give 5% negative emissions
@@ -25,22 +25,10 @@ scenario:
   # planning_horizons), be:beta decay; ex:exponential decay
   # cb40ex0 distributes a carbon budget of 40 GtCO2 following an exponential
   # decay with initial growth rate 0
-  planning_horizons : [2020, 2025, 2030, 2035, 2040, 2045, 2050] # investment years for myopic and perfect; or costs year for overnight
+  planning_horizons : [2050] # investment years for myopic and perfect; or costs year for overnight
   # for example, set to [2020, 2030, 2040, 2050] for myopic foresight
 
-# CO2 budget as a fraction of 1990 emissions
-# this is over-ridden if CO2Lx is set in sector_opts
-# this is also over-ridden if cb is set in sector_opts
-co2_budget:
-  2020: 0.7011648746
-  2025: 0.5241935484
-  2030: 0.2970430108
-  2035: 0.1500896057
-  2040: 0.0712365591
-  2045: 0.0322580645
-  2050: 0
-
-countries: ['DK']
+countries: ['AL', 'AT', 'BA', 'BE', 'BG', 'CH', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GB', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'ME', 'MK', 'NL', 'NO', 'PL', 'PT', 'RO', 'RS', 'SE', 'SI', 'SK', 'XK']
 
 # snapshots are originally set in PyPSA-Eur/config.yaml but used again by PyPSA-Eur-Sec
 snapshots:
@@ -49,6 +37,12 @@ snapshots:
   end: "2014-01-01"
   inclusive: 'left' # end is not inclusive
 
+# CO2 budget as a fraction of 1990 emissions
+# this is over-ridden if CO2Lx is set in sector_opts
+# this is also over-ridden if cb is set in sector_opts
+co2_budget:
+  2050: 0
+
 # this information is NOT used but needed as an argument for
 # pypsa-eur/scripts/add_electricity.py/load_costs in make_summary.py
 electricity:
@@ -56,17 +50,210 @@ electricity:
     battery: 6
     H2: 168
 
+  #operational_reserve:
+  #  activate: true
+  #  epsilon_load: 0.02
+  #  epsilon_vres: 0.02
+  #  contingency: 4000
+
   extendable_carriers:
-    Generator: [solar, solar-hsat, onwind, offwind-ac, offwind-dc, offwind-float, OCGT, CCGT, nuclear]
+    Generator: [solar, solar-hsat, onwind, offwind-ac, offwind-dc, offwind-float, OCGT, CCGT, nuclear, biomass]
     StorageUnit: [] # battery, H2
     Store: [battery, H2]
     Link: [] # H2 pipeline
 
   everywhere_powerplants: [nuclear]
 
+  estimate_renewable_capacities:
+    enable: true
+    from_gem: true
+    year: 2025
+    expansion_limit: false
+    technology_mapping:
+      Offshore: [offwind-ac, offwind-dc, offwind-float]
+      Onshore: [onwind]
+      PV: [solar]
+
+  autarky:
+    enable: true
+    by_country: true
+
   #conventional_carriers: [oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
   #renewable_carriers: [solar, solar-hsat, onwind, offwind-ac, offwind-dc, offwind-float, hydro]
 
+# docs in https://pypsa-eur.readthedocs.io/en/latest/configuration.html#atlite
+atlite:
+  default_cutout: europe-2013-sarah3-era5
+  nprocesses: 4
+  show_progress: false
+  cutouts:
+    # use 'base' to determine geographical bounds and time span from config
+    # base:
+      # module: era5
+    europe-2013-sarah3-era5:
+      module: [sarah, era5] # in priority order
+      x: [-12., 42.]
+      y: [33., 72.]
+      dx: 0.3
+      dy: 0.3
+      time: ['2013', '2013']
+ 
+renewable:
+  onwind:
+    cutout: europe-2013-sarah3-era5
+    resource:
+      method: wind
+      turbine: Vestas_V112_3MW
+      smooth: false
+      add_cutout_windspeed: true
+    capacity_per_sqkm: 3
+    correction_factor: 0.93
+    corine:
+      grid_codes: [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32]
+      distance: 1000
+      distance_grid_codes: [1, 2, 3, 4, 5, 6]
+    luisa: false
+      # grid_codes: [1111, 1121, 1122, 1123, 1130, 1210, 1221, 1222, 1230, 1241, 1242]
+      # distance: 1000
+      # distance_grid_codes: [1111, 1121, 1122, 1123, 1130, 1210, 1221, 1222, 1230, 1241, 1242]
+    natura: true
+    excluder_resolution: 100
+    clip_p_max_pu: 1.e-2
+  offwind-ac:
+    cutout: europe-2013-sarah3-era5
+    resource:
+      method: wind
+      turbine: NREL_ReferenceTurbine_2020ATB_5.5MW
+      smooth: false
+      add_cutout_windspeed: true
+    capacity_per_sqkm: 2
+    correction_factor: 0.8855
+    corine: [44, 255]
+    luisa: false # [0, 5230]
+    natura: true
+    ship_threshold: 400
+    max_depth: 60
+    max_shore_distance: 30000
+    excluder_resolution: 200
+    clip_p_max_pu: 1.e-2
+    landfall_length: 10
+  offwind-dc:
+    cutout: europe-2013-sarah3-era5
+    resource:
+      method: wind
+      turbine: NREL_ReferenceTurbine_2020ATB_5.5MW
+      smooth: false
+      add_cutout_windspeed: true
+    capacity_per_sqkm: 2
+    correction_factor: 0.79
+    corine: [44, 255]
+    luisa: false # [0, 5230]
+    natura: true
+    ship_threshold: 400
+    max_depth: 60
+    min_shore_distance: 30000
+    excluder_resolution: 200
+    clip_p_max_pu: 1.e-2
+    landfall_length: 10
+  offwind-float:
+    cutout: europe-2013-sarah3-era5
+    resource:
+      method: wind
+      turbine: NREL_ReferenceTurbine_5MW_offshore
+      smooth: false
+      add_cutout_windspeed: true
+    # ScholzPhd Tab 4.3.1: 10MW/km^2
+    capacity_per_sqkm: 2
+    correction_factor: 0.79
+    # proxy for wake losses
+    # from 10.1016/j.energy.2018.08.153
+    # until done more rigorously in #153
+    corine: [44, 255]
+    natura: true
+    ship_threshold: 400
+    excluder_resolution: 200
+    min_depth: 60
+    max_depth: 1000
+    clip_p_max_pu: 1.e-2
+    landfall_length: 10
+  solar:
+    cutout: europe-2013-sarah3-era5
+    resource:
+      method: pv
+      panel: CSi
+      orientation:
+        slope: 35.
+        azimuth: 180.
+    capacity_per_sqkm: 5.1
+    # correction_factor: 0.854337
+    corine: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 26, 31, 32]
+    luisa: false # [1111, 1121, 1122, 1123, 1130, 1210, 1221, 1222, 1230, 1241, 1242, 1310, 1320, 1330, 1410, 1421, 1422, 2110, 2120, 2130, 2210, 2220, 2230, 2310, 2410, 2420, 3210, 3320, 3330]
+    natura: true
+    excluder_resolution: 100
+    clip_p_max_pu: 1.e-2
+  solar-hsat:
+    cutout: europe-2013-sarah3-era5
+    resource:
+      method: pv
+      panel: CSi
+      orientation:
+        slope: 35.
+        azimuth: 180.
+      tracking: horizontal
+    capacity_per_sqkm: 4.43 # 15% higher land usage acc. to NREL
+    corine: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 26, 31, 32]
+    luisa: false # [1111, 1121, 1122, 1123, 1130, 1210, 1221, 1222, 1230, 1241, 1242, 1310, 1320, 1330, 1410, 1421, 1422, 2110, 2120, 2130, 2210, 2220, 2230, 2310, 2410, 2420, 3210, 3320, 3330]
+    natura: true
+    excluder_resolution: 100
+    clip_p_max_pu: 1.e-2
+  hydro:
+    cutout: europe-2013-sarah3-era5
+    carriers: [ror, PHS, hydro]
+    PHS_max_hours: 6
+    hydro_max_hours: "energy_capacity_totals_by_country" # one of energy_capacity_totals_by_country, estimate_by_large_installations or a float
+    flatten_dispatch: false
+    flatten_dispatch_buffer: 0.2
+    clip_min_inflow: 1.0
+    eia_norm_year: false
+    eia_correct_by_capacity: false
+    eia_approximate_missing: false
+
+lines:
+  types:
+    220.: "Al/St 240/40 2-bundle 220.0"
+    300.: "Al/St 240/40 3-bundle 300.0"
+    330.: "Al/St 240/40 3-bundle 300.0"
+    380.: "Al/St 240/40 4-bundle 380.0"
+    400.: "Al/St 240/40 4-bundle 380.0"
+    500.: "Al/St 240/40 4-bundle 380.0"
+    750.: "Al/St 560/50 4-bundle 750.0"
+  s_max_pu: 0.7
+  s_nom_max: 3000
+  max_extension: 2000 #MW
+  length_factor: 1.25
+  reconnect_crimea: true
+  under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity for lines in grid extract
+  dynamic_line_rating:
+    activate: false
+    cutout: europe-2013-sarah3-era5
+    correction_factor: 0.95
+    max_voltage_difference: false
+    max_line_rating: false
+
+links:
+  p_max_pu: 1.0
+  p_nom_max: 3000 #MW
+  max_extension: 500 #MW
+  length_factor: 1.25
+  under_construction: 'keep' # 'zero': set capacity to zero, 'remove': remove, 'keep': with full capacity for lines in grid extract
+
+
+transmission_projects:
+  enable: true
+  include:
+    tyndp2020: true
+    nep: true
+    manual: true
 
 
 # only relevant for foresight = myopic or perfect
@@ -92,13 +279,7 @@ sector:
   'v2g' : True #allows feed-in to grid from EV battery
   #what is not EV or FCEV is oil-fuelled ICE
   'land_transport_fuel_cell_share': # 1 means all FCEVs
-    2020: 0
-    2025: 0.025
-    2030: 0.05
-    2035: 0.075
-    2040: 0.1
-    2045: 0.125
-    2050: 0.15
+    2050: 0.0
   'land_transport_electric_share': # 1 means all EVs
     2020: 0
     2025: 0.10
@@ -142,6 +323,8 @@ sector:
     'construction_index': True   # weight costs depending on labour/material costs per country
   'boilers' : True
   'oil_boilers': False
+  nuclear_chp:
+    enable: true
   chp:
     enable: true
     fuel:
@@ -153,7 +336,7 @@ sector:
   'marginal_cost_storage' : 0. #1e-4
   'methanation' : True
   'helmeth' : True
-  'dac' : false
+  'dac' : True
   'co2_vent' : True
   'SMR' : True
   'co2_sequestration_potential' : 200  #MtCO2/a sequestration potential for Europe
@@ -162,24 +345,11 @@ sector:
   'hydrogen_underground_storage' : True
   'use_fischer_tropsch_waste_heat' : True
   'use_fuel_cell_waste_heat' : True
-  'electricity_distribution_grid' : True
+  'electricity_distribution_grid' : False
   'electricity_distribution_grid_cost_factor' : 1.0  #multiplies cost in data/costs.csv
   'electricity_grid_connection' : True  # only applies to onshore wind and utility PV
   'gas_distribution_grid' : True
   'gas_distribution_grid_cost_factor' : 1.0  #multiplies cost in data/costs.csv
-
-
-costs:
-  lifetime: 25 #default lifetime
-  # From a Lion Hirth paper, also reflects average of Noothout et al 2016
-  discountrate: 0.07
-  # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html # noqa: E501
-  USD2013_to_EUR2013: 0.92
-
-  # Marginal and capital costs can be overwritten
-
-  emission_prices: # only used with the option Ep (emission prices)
-    co2: 0.
 
 industry:
   'St_primary_fraction' : # fraction of steel produced via primary route (Steelworks) versus secondary route (scrap+EAF); today fraction is 0.6
@@ -215,14 +385,27 @@ industry:
   'NH3_process_emissions' : 24.5 # in MtCO2/a from SMR for H2 production for NH3 from UNFCCC for 2015 for EU28
   'petrochemical_process_emissions' : 25.5 # in MtCO2/a for petrochemical and other from UNFCCC for 2015 for EU28
   'HVC_primary_fraction' : 1.0 #fraction of current non-ammonia basic chemicals produced via primary route
-  waste_to_energy: true
-  waste_to_energy_cc: true
+
+
+costs:
+  year: 2035
+  social_discountrate: 0.05
+  discountrate: 0.05
+  # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html # noqa: E501
+  USD2013_to_EUR2013: 0.88
+
+  # Marginal and capital costs can be overwritten
+
+  emission_prices: # only used with the option Ep (emission prices)
+    co2: 0.
+
+
 solving:
   #tmpdir: "path/to/tmp"
   options:
     clip_p_max_pu: 1.e-2
     load_shedding: false
-    curtailment_mode: false
+    curtailment_mode: true
     noisy_costs: true
     skip_iterations: true
     rolling_horizon: false
@@ -237,7 +420,7 @@ solving:
     linearized_unit_commitment: true
     horizon: 365
     post_discretization:
-      enable: false
+      enable: true
       line_unit_size: 1700
       line_threshold: 0.3
       link_unit_size:
@@ -252,11 +435,11 @@ solving:
 
   agg_p_nom_limits:
     agg_offwind: false
-    include_existing: false
+    include_existing: true
     file: data/agg_p_nom_minmax.csv
 
   constraints:
-    CCL: false
+    CCL: true
     EQ: false
     BAU: false
     SAFE: false
@@ -336,22 +519,11 @@ solving:
   mem_mb: 30000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
   runtime: 6h #runtime in humanfriendly style https://humanfriendly.readthedocs.io/en/latest/
 
-atlite:
-  default_cutout: denmark-2013
-  nprocesses: 4
-  show_progress: false
-  cutouts:
-    denmark-2013:
-      module: [sarah, era5]
-      x: [7.5, 13.0]   # grovt estimat for DK
-      y: [54.5, 58.0]
-      dx: 0.3
-      dy: 0.3
-      time: ['2013', '2013']
 
 plotting:
   map:
-    boundaries: [7.5, 13, 54.5,  58]
+    #boundaries: [-10.2, 29, 35,  72]
+    boundaries: [7.0, 13.5, 53,  59.4]
 
   costs_max: 1200
   costs_threshold: 1
@@ -363,31 +535,31 @@ plotting:
 
 
   tech_colors:
-    onwind : "b"
-    onshore wind : "b"
-    offwind : "c"
-    offshore wind : "c"
-    offwind-ac : "c"
-    offshore wind (AC) : "c"
-    offwind-dc : "#009999"
-    offshore wind (DC) : "#009999"
+    onwind : "xkcd:mid blue"
+    onshore wind : "xkcd:mid blue"
+    offwind : "xkcd:sky blue"
+    offshore wind : "xkcd:sky blue"
+    offwind-ac : "xkcd:sky blue"
+    offshore wind (AC) : "xkcd:sky blue"
+    offwind-dc : "xkcd:carolina blue"
+    offshore wind (DC) : "xkcd:carolina blue"
     wave : "#004444"
-    hydro : "#3B5323"
-    hydro reservoir : "#3B5323"
+    hydro : "xkcd:jungle green"
+    hydro reservoir : "xkcd:jungle green"
     ror : "#78AB46"
     run of river : "#78AB46"
     hydroelectricity : "#006400"
     solar : "y"
     solar PV : "y"
-    solar thermal : coral
-    solar rooftop : '#e6b800'
+    solar thermal : "xkcd:yellowish"
+    solar rooftop : "xkcd:sunflower yellow"
     OCGT : "wheat"
     OCGT marginal : "sandybrown"
-    OCGT-heat : "orange"
-    gas boiler : "orange"
-    gas boilers : "orange"
-    gas boiler marginal : "orange"
-    gas-to-power/heat : "orange"
+    OCGT-heat : "xkcd:pumpkin orange"
+    gas boiler : "xkcd:pumpkin orange"
+    gas boilers : "xkcd:pumpkin orange"
+    gas boiler marginal : "xkcd:pumpkin orange"
+    gas-to-power/heat : "xkcd:pumpkin orange"
     gas : "brown"
     natural gas : "brown"
     SMR : "#4F4F2F"
@@ -401,23 +573,29 @@ plotting:
     battery storage : "slategray"
     home battery : "#614700"
     home battery storage : "#614700"
-    Nuclear : "r"
-    Nuclear marginal : "r"
-    nuclear : "r"
-    uranium : "r"
+    Nuclear : "xkcd:electric lime"
+    Nuclear marginal : "xkcd:electric lime"
+    nuclear : "xkcd:electric lime"
+    nuclear CHP : "xkcd:electric lime"
+    nuclear CHP heat: "xkcd:green apple"
+    nuclear CHP elec.: "xkcd:green apple"
+    nuclear with DH : "xkcd:green apple"
+    nuclear with DH: "xkcd:green apple"
+    uranium : "xkcd:electric lime"
     Coal : "k"
     coal : "k"
+    curtailment: "darkseagreen"
     Coal marginal : "k"
     Lignite : "grey"
     lignite : "grey"
     Lignite marginal : "grey"
-    CCGT : "orange"
-    CCGT marginal : "orange"
+    CCGT : "xkcd:pumpkin orange"
+    CCGT marginal : "xkcd:pumpkin orange"
     heat pumps : "#76EE00"
     heat pump : "#76EE00"
     air heat pump : "#76EE00"
-    ground heat pump : "#40AA00"
-    power-to-heat : "#40AA00"
+    ground heat pump : "xkcd:pastel purple"
+    power-to-heat : "xkcd:pastel purple"
     resistive heater : "pink"
     Sabatier : "#FF1493"
     methanation : "#FF1493"
@@ -425,7 +603,7 @@ plotting:
     power-to-liquid : "#FFAAE9"
     helmeth : "#7D0552"
     helmeth : "#7D0552"
-    DAC : "#E74C3C"
+    DAC : "xkcd:bubble gum pink"
     co2 stored : "#123456"
     CO2 sequestration : "#123456"
     CC : "k"

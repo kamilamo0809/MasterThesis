@@ -191,7 +191,7 @@ def plot_h2_map(n, regions):
         },
     )
 
-    sizes = [50, 10]
+    sizes = [200, 100, 50, 10]
     labels = [f"{s} GW" for s in sizes]
     sizes = [s / bus_size_factor * 1e3 for s in sizes]
 

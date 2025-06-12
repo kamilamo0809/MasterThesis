@@ -34,6 +34,8 @@ if config["foresight"] != "perfect":
         output:
             map=RESULTS
             + "maps/base_s_{clusters}_{opts}_{sector_opts}-costs-all_{planning_horizons}.pdf",
+            map_eps=RESULTS
+            + "maps/base_s_{clusters}_{opts}_{sector_opts}-costs-all_{planning_horizons}.eps",
         threads: 2
         resources:
             mem_mb=10000,
@@ -50,6 +52,37 @@ if config["foresight"] != "perfect":
         script:
             "../scripts/plot_power_network.py"
 
+    rule plot_bar_dk:
+        params:
+            plotting=config_provider("plotting"),
+            transmission_limit=config_provider("electricity", "transmission_limit"),
+        input:
+            network11= r"C:\Users\jonaskn\PythonProjects\pypsa-eur\results\11-EU-autarky-transport\networks\base_s_39_CCL_3H-T-H-B-I-dist1-cb73.9ex0_2050.nc",
+            network13= r"C:\Users\jonaskn\PythonProjects\pypsa-eur\results\13-EU-autarky-no_tranport\networks\base_s_39_CCL_3H-T-H-B-I-dist1-cb73.9ex0_2050.nc",
+            network21= r"C:\Users\jonaskn\PythonProjects\pypsa-eur\results\21-EU-no_extencion-transport\networks\base_s_39_CCL_3H-T-H-B-I-dist1-cb73.9ex0_2050.nc",
+            network23= r"C:\Users\jonaskn\PythonProjects\pypsa-eur\results\23-EU-connected-EVs\networks\base_s_39_CCL_3H-T-H-B-I-dist1-cb73.9ex0_2050.nc",
+
+        output:
+            bar_dk=RESULTS
+            + "maps/base_s_{clusters}_{opts}_{sector_opts}-bars_{planning_horizons}.pdf",
+            bar_dk_eps=RESULTS
+            + "maps/base_s_{clusters}_{opts}_{sector_opts}-bars_{planning_horizons}.eps"
+        threads: 2
+        resources:
+            mem_mb=10000,
+        log:
+            RESULTS
+            + "logs/plot_power_network/base_s_{clusters}_{opts}_{sector_opts}_{planning_horizons}.log",
+        benchmark:
+            (
+                RESULTS
+                + "benchmarks/plot_power_network/base_s_{clusters}_{opts}_{sector_opts}_{planning_horizons}"
+            )
+        conda:
+            "../envs/environment.yaml"
+        script:
+            "../scripts/plot_power_bar_dk.py"
+
     rule plot_hydrogen_network:
         params:
             plotting=config_provider("plotting"),
@@ -60,7 +93,7 @@ if config["foresight"] != "perfect":
             regions=resources("regions_onshore_base_s_{clusters}.geojson"),
         output:
             map=RESULTS
-            + "maps/base_s_{clusters}_{opts}_{sector_opts}-h2_network_{planning_horizons}.pdf",
+            + "maps/base_s_{clusters}_{opts}_{sector_opts}-h2_network_{planning_horizons}.eps",
         threads: 2
         resources:
             mem_mb=10000,
@@ -110,7 +143,7 @@ if config["foresight"] == "perfect":
         return {
             f"map_{year}": RESULTS
             + "maps/base_s_{clusters}_{opts}_{sector_opts}-costs-all_"
-            + f"{year}.pdf"
+            + f"{year}.eps"
             for year in config_provider("scenario", "planning_horizons")(w)
         }
 
@@ -163,14 +196,14 @@ rule make_summary:
         ),
         costs_plot=expand(
             RESULTS
-            + "maps/base_s_{clusters}_{opts}_{sector_opts}-costs-all_{planning_horizons}.pdf",
+            + "maps/base_s_{clusters}_{opts}_{sector_opts}-costs-all_{planning_horizons}.eps",
             **config["scenario"],
             allow_missing=True,
         ),
         h2_plot=lambda w: expand(
             (
                 RESULTS
-                + "maps/base_s_{clusters}_{opts}_{sector_opts}-h2_network_{planning_horizons}.pdf"
+                + "maps/base_s_{clusters}_{opts}_{sector_opts}-h2_network_{planning_horizons}.eps"
                 if config_provider("sector", "H2_network")(w)
                 else []
             ),
@@ -233,6 +266,7 @@ rule plot_summary:
         co2="data/bundle/eea/UNFCCC_v23.csv",
     output:
         costs=RESULTS + "graphs/costs.svg",
+        costsdk=RESULTS + "graph/costs_dk.eps",
         energy=RESULTS + "graphs/energy.svg",
         balances=RESULTS + "graphs/balances-energy.svg",
     threads: 2

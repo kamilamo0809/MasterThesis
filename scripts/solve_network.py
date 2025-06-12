@@ -391,7 +391,7 @@ def prepare_network(
         buses_i = n.buses.index
         if not np.isscalar(load_shedding):
             # TODO: do not scale via sign attribute (use Eur/MWh instead of Eur/kWh)
-            load_shedding = 1e2  # Eur/kWh
+            load_shedding = 8e3  # Eur/kWh
 
         n.add(
             "Generator",
@@ -415,7 +415,7 @@ def prepare_network(
             bus=buses_i,
             p_min_pu=-1,
             p_max_pu=0,
-            marginal_cost=-0.1,
+            marginal_cost=-200,
             carrier="curtailment",
             p_nom=1e6,
         )

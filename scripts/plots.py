@@ -65,7 +65,7 @@ def load_projection(plotting_params):
 def plot_map(
     n,
     components=["links", "stores", "storage_units", "generators"],
-    bus_size_factor=9e9,
+    bus_size_factor=5e10,
     transmission=False,
     with_legend=True,
 ):
@@ -239,7 +239,7 @@ def plot_map(
             labels,
             legend_kw=legend_kw,
         )
-    fig.savefig(snakemake.output.map_eps, bbox_inches="tight")
+
     fig.savefig(snakemake.output.map, bbox_inches="tight")
     plt.close(fig)
 

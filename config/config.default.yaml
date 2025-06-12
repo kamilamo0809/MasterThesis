@@ -107,7 +107,7 @@ electricity:
     Store: [battery, H2]
     Link: [] # H2 pipeline
 
-  powerplants_filter: (DateOut >= 2024 or DateOut != DateOut) and not (Country == 'Germany' and Fueltype == 'Nuclear')
+  powerplants_filter: (DateOut >= 2024 or DateOut != DateOut)
   custom_powerplants: false
   everywhere_powerplants: []
 
@@ -441,6 +441,7 @@ existing_capacities:
 sector:
   transport: true
   heating: true
+  shipping: true
   biomass: true
   industry: true
   agriculture: true
@@ -849,14 +850,11 @@ costs:
     investment: 0
     lifetime: 25
     "CO2 intensity": 0
-    "discount rate": 0.07
+    "discount rate": 0.05
   # Marginal and capital costs can be overwritten
   # capital_cost:
   #   onwind: 500
   marginal_cost:
-    solar: 0.01
-    onwind: 0.015
-    offwind: 0.015
     hydro: 0.
     H2: 0.
     electrolysis: 0.
